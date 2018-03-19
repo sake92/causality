@@ -1,0 +1,82 @@
+
+buildscript {
+    ext {
+        springBootVersion = '1.5.9.RELEASE'
+    }
+    repositories {
+        mavenCentral()
+        maven { url "https://repo.spring.io/snapshot" }
+        maven { url "https://repo.spring.io/milestone" }
+    }
+    dependencies {
+        classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
+    }
+}
+
+plugins {
+    id 'io.franzbecker.gradle-lombok' version '1.12'
+    id 'java'
+}
+
+task wrapper(type: Wrapper) {
+    gradleVersion = '4.4.1'
+}
+
+allprojects {
+    apply plugin: 'java'
+    apply plugin: 'eclipse'
+    apply plugin: 'idea'
+
+    sourceCompatibility = 1.8
+    targetCompatibility = 1.8
+
+    group = 'ba.sake'
+    version = '0.0.1-SNAPSHOT'
+
+    repositories {
+        jcenter()
+        mavenCentral()
+        maven { url "https://repo.spring.io/snapshot" }
+        maven { url "https://repo.spring.io/milestone" }
+        maven { url 'https://repo.spring.io/libs-milestone' }
+    }
+
+    dependencies {
+        compile("org.projectlombok:lombok:1.16.20")
+    }
+}
+
+// BOOT subprojects
+configure(subprojects.findAll { !it.name.contains('common') && it.name!='modules' }) {
+    apply plugin: 'org.springframework.boot'
+    apply plugin: 'io.spring.dependency-management'
+
+    ext {
+        springCloudVersion = 'Edgware.RELEASE'
+    }
+
+    dependencyManagement {
+        imports {
+            mavenBom "org.springframework.cloud:spring-cloud-dependencies:${springCloudVersion}"
+        }
+    }
+
+    dependencies {
+        compile project(':modules:causality-common')
+        compile('org.springframework.boot:spring-boot-starter-web')
+        compile('org.springframework.boot:spring-boot-starter-data-jpa')
+        compile('org.springframework.cloud:spring-cloud-stream')
+        compile('org.springframework.cloud:spring-cloud-stream-binder-kafka')
+        runtime('com.h2database:h2')
+        // test
+        testCompile('org.springframework.boot:spring-boot-starter-test')
+        // other
+        compile("org.springframework.boot:spring-boot-devtools")
+    }
+    
+    // pass system properties from console to bootRun task
+    // http://mrhaki.blogspot.ba/2015/09/spring-sweets-java-system-properties-as.html
+	bootRun {
+	//    systemProperties System.properties
+	}
+}
